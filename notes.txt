@@ -1,0 +1,28 @@
+Motor PWM: 5 kHz
+PWM resolution: 12 bits (20 MHz ticks)
+
+Encoder I2C freq: 1 MHz
+R/W ANGLE sample: 27 bits
+Max. read rate: 30 kHz
+Real sampling rate: 1 / 150 µs = 6.7 kHz
+
+15 motors, each comprising:
+- 2x power line (VM, GND)
+- 1x capacitive sensor line — hanging
+- 1x encoder SDA line
+- 6x motor control line (3-phase EN/IN)
+- 2x LED line (3x?) — hanging
+totalling 3x (4x?) hanging, ~12x routed, where 3x (VM, GND, SCL) common and the rest exclusive
+
+STM32F103Cx has 37 GPIOs
+
+What if each unit (motor + encoder — servo, LED, cap. sensor) is controlled by SPI?
+- 2x power line (VM, GND)
+- 2x SPI lines (CSN, SDA — half-duplex)
+- Updated at 1 kHz, each 10 bytes = 90 bits
+- Unit MCU needs 6 PWM (3 motor, 3 LED) + 3 motor EN + 2 I2C + 1 Cap
+
+STM32G030F6 GPIO AF setup:
+- SPI2: 3 lines
+- PWM: 6 lines (2-4 timers)
+- I2C: 2 lines
