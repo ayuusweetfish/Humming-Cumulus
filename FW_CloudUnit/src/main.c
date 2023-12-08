@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define LED_IND_ACT_PORT  GPIOC
 #define LED_IND_ACT_PIN   GPIO_PIN_15
@@ -15,6 +16,7 @@
 #define LED_OUT_B_PIN   GPIO_PIN_7
 
 TIM_HandleTypeDef tim14, tim16, tim17;
+I2C_HandleTypeDef i2c2;
 
 static uint8_t swv_buf[256];
 static size_t swv_buf_ptr = 0;
@@ -176,6 +178,42 @@ int main()
   };
   HAL_TIM_PWM_ConfigChannel(&tim17, &tim17_ch1_oc_init, TIM_CHANNEL_1);
   HAL_TIMEx_PWMN_Start(&tim17, TIM_CHANNEL_1);
+
+  // ======== I2C ========
+  gpio_init.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Alternate = GPIO_AF6_I2C2;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &gpio_init);
+
+  __HAL_RCC_I2C2_CLK_ENABLE();
+  HAL_I2CEx_EnableFastModePlus(I2C_FASTMODEPLUS_I2C2);
+  i2c2 = (I2C_HandleTypeDef){
+    .Instance = I2C2,
+    .Init = {
+      // RM0454 Rev 5, pp. 711, 726, 738 (examples)
+      // APB = 16 MHz, fast mode f_SCL = 100 kHz
+      // PRESC = 3, SCLDEL = 0x4, SDADEL = 0x2,
+      // SCLH = 0x0F, SCLH = 0x0F, SCLL = 0x13
+      .Timing = 0x30420F13,
+      .OwnAddress1 = 0x00,
+      .AddressingMode = I2C_ADDRESSINGMODE_7BIT,
+    },
+  };
+  HAL_I2C_Init(&i2c2);
+
+  // Read registers from AS5600
+  while (1) {
+    uint8_t status = 0, agc = 0;
+    uint8_t raw_angle[2];
+    HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x0B, I2C_MEMADD_SIZE_8BIT, &status, 1, 1000);
+    HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x1A, I2C_MEMADD_SIZE_8BIT, &agc, 1, 1000);
+    HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x0E, I2C_MEMADD_SIZE_8BIT, raw_angle, 2, 1000);
+    swv_printf("status = %02x, AGC = %02x, raw angle = %4u\n",
+      status & 0x38, agc, ((uint32_t)raw_angle[0] << 8) | raw_angle[1]);
+    HAL_Delay(200);
+  }
 
   // ======== Main loop ========
   while (true) {
