@@ -210,9 +210,31 @@ int main()
     HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x0B, I2C_MEMADD_SIZE_8BIT, &status, 1, 1000);
     HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x1A, I2C_MEMADD_SIZE_8BIT, &agc, 1, 1000);
     HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x0E, I2C_MEMADD_SIZE_8BIT, raw_angle, 2, 1000);
+  /*
     swv_printf("status = %02x, AGC = %02x, raw angle = %4u\n",
       status & 0x38, agc, ((uint32_t)raw_angle[0] << 8) | raw_angle[1]);
     HAL_Delay(200);
+  */
+    if (status & 0x20) {
+      // MD: Magnet detected
+      if (!(status & 0x18)) {
+        // No ML or MH: within recommended magnitude range
+        uint32_t a = ((uint32_t)raw_angle[0] << 8) | raw_angle[1];
+        TIM14->CCR1 = abs(a - 2048) * 6;
+        TIM16->CCR1 = (2048 - abs(a - 2048)) * 5;
+        TIM17->CCR1 = 1000;
+      } else {
+        // Out of range
+        TIM14->CCR1 = 0;
+        TIM16->CCR1 = 0;
+        TIM17->CCR1 = 4000;
+      }
+    } else {
+      TIM14->CCR1 = 0;
+      TIM16->CCR1 = 0;
+      TIM17->CCR1 = 0;
+    }
+    HAL_Delay(1);
   }
 
   // ======== Main loop ========
@@ -231,12 +253,6 @@ int main()
       TIM17->CCR1 = duty[2];
       HAL_Delay(3);
     }
-  /*
-    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, GPIO_PIN_SET);
-    HAL_Delay(200);
-    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, GPIO_PIN_RESET);
-    HAL_Delay(200);
-  */
   }
 }
 
@@ -244,4 +260,7 @@ void SysTick_Handler()
 {
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
+
+  if (HAL_GetTick() % 500 == 0)
+    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, HAL_GetTick() % 1000 == 0);
 }
