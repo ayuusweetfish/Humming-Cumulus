@@ -14,6 +14,8 @@
 #define LED_OUT_B_PORT  GPIOB
 #define LED_OUT_B_PIN   GPIO_PIN_7
 
+TIM_HandleTypeDef tim14;
+
 static uint8_t swv_buf[256];
 static size_t swv_buf_ptr = 0;
 __attribute__ ((noinline, used))
@@ -90,20 +92,55 @@ int main()
 
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
+  // ======== Timer ========
+  gpio_init.Pin = LED_OUT_R_PIN;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Alternate = GPIO_AF4_TIM14;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(LED_OUT_R_PORT, &gpio_init);
+  __HAL_RCC_TIM14_CLK_ENABLE();
+  // APB1 = 16 MHz
+  // period = 1 kHz = 16000 cycles
+  tim14 = (TIM_HandleTypeDef){
+    .Instance = TIM14,
+    .Init = {
+      .Prescaler = 1 - 1,
+      .CounterMode = TIM_COUNTERMODE_UP,
+      .Period = 16000 - 1,
+      .ClockDivision = TIM_CLOCKDIVISION_DIV1,
+      .RepetitionCounter = 0,
+    },
+  };
+  HAL_TIM_PWM_Init(&tim14);
+  TIM_OC_InitTypeDef tim14_ch1_oc_init = {
+    .OCMode = TIM_OCMODE_PWM1,
+    .Pulse = 0, // to be filled
+    .OCPolarity = TIM_OCPOLARITY_LOW,
+  };
+  HAL_TIM_PWM_ConfigChannel(&tim14, &tim14_ch1_oc_init, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&tim14, TIM_CHANNEL_1);
+
   // ======== Main loop ========
   gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
   gpio_init.Pull = GPIO_PULLUP;
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
-  gpio_init.Pin = LED_OUT_R_PIN; HAL_GPIO_Init(LED_OUT_R_PORT, &gpio_init);
   gpio_init.Pin = LED_OUT_G_PIN; HAL_GPIO_Init(LED_OUT_G_PORT, &gpio_init);
   gpio_init.Pin = LED_OUT_B_PIN; HAL_GPIO_Init(LED_OUT_B_PORT, &gpio_init);
-  HAL_GPIO_WritePin(LED_OUT_R_PORT, LED_OUT_R_PIN, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LED_OUT_G_PORT, LED_OUT_G_PIN, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LED_OUT_B_PORT, LED_OUT_B_PIN, GPIO_PIN_SET);
 
   while (true) {
+    for (int i = 0; i <= 16000; i += 10) {
+      TIM14->CCR1 = i;
+      HAL_Delay(1);
+    }
+    for (int i = 0; i <= 100; i++) {
+      TIM14->CCR1 = i;
+      HAL_Delay(10);
+    }
     for (int i = 0; i < 8; i++) {
-      HAL_GPIO_WritePin(LED_OUT_R_PORT, LED_OUT_R_PIN, (~i >> 0) & 1);
+      // HAL_GPIO_WritePin(LED_OUT_R_PORT, LED_OUT_R_PIN, (~i >> 0) & 1);
       HAL_GPIO_WritePin(LED_OUT_G_PORT, LED_OUT_G_PIN, (~i >> 1) & 1);
       HAL_GPIO_WritePin(LED_OUT_B_PORT, LED_OUT_B_PIN, (~i >> 2) & 1);
       HAL_Delay(500);
