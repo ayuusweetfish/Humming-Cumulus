@@ -7,6 +7,13 @@
 #define LED_IND_ACT_PORT  GPIOC
 #define LED_IND_ACT_PIN   GPIO_PIN_15
 
+#define LED_OUT_R_PORT  GPIOA
+#define LED_OUT_R_PIN   GPIO_PIN_4
+#define LED_OUT_G_PORT  GPIOB
+#define LED_OUT_G_PIN   GPIO_PIN_6
+#define LED_OUT_B_PORT  GPIOB
+#define LED_OUT_B_PIN   GPIO_PIN_7
+
 static uint8_t swv_buf[256];
 static size_t swv_buf_ptr = 0;
 __attribute__ ((noinline, used))
@@ -51,7 +58,7 @@ int main()
 
   gpio_init.Pin = LED_IND_ACT_PIN;
   gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
-  gpio_init.Pull = GPIO_PULLUP;
+  gpio_init.Pull = GPIO_PULLDOWN;
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_IND_ACT_PORT, &gpio_init);
   HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, GPIO_PIN_RESET);
@@ -83,10 +90,27 @@ int main()
 
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
+  // ======== Main loop ========
+  gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init.Pull = GPIO_PULLUP;
+  gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+  gpio_init.Pin = LED_OUT_R_PIN; HAL_GPIO_Init(LED_OUT_R_PORT, &gpio_init);
+  gpio_init.Pin = LED_OUT_G_PIN; HAL_GPIO_Init(LED_OUT_G_PORT, &gpio_init);
+  gpio_init.Pin = LED_OUT_B_PIN; HAL_GPIO_Init(LED_OUT_B_PORT, &gpio_init);
+  HAL_GPIO_WritePin(LED_OUT_R_PORT, LED_OUT_R_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_OUT_G_PORT, LED_OUT_G_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_OUT_B_PORT, LED_OUT_B_PIN, GPIO_PIN_SET);
+
   while (true) {
-    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, GPIO_PIN_RESET);
-    HAL_Delay(200);
+    for (int i = 0; i < 8; i++) {
+      HAL_GPIO_WritePin(LED_OUT_R_PORT, LED_OUT_R_PIN, (~i >> 0) & 1);
+      HAL_GPIO_WritePin(LED_OUT_G_PORT, LED_OUT_G_PIN, (~i >> 1) & 1);
+      HAL_GPIO_WritePin(LED_OUT_B_PORT, LED_OUT_B_PIN, (~i >> 2) & 1);
+      HAL_Delay(500);
+    }
     HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, GPIO_PIN_SET);
+    HAL_Delay(200);
+    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, GPIO_PIN_RESET);
     HAL_Delay(200);
   }
 }
