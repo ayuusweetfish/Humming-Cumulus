@@ -40,40 +40,38 @@ static void swv_printf(const char *restrict fmt, ...)
 }
 
 SPI_HandleTypeDef spi1 = { 0 };
+TIM_HandleTypeDef tim2 = { 0 };
 
 #pragma GCC optimize ("O3")
 static inline void i2s_delay_half()
 {
   // LRCLK = 48 kHz
-  // BCLK = 16 * LRCLK = 768 kHz
-  // Half cycle = 46.875 HCLK cycles
+  // BCLK = 32 * LRCLK = 1536 kHz
+  // Half cycle = 23.4375 HCLK cycles
   // Note: acceptable LRCLK range 30.4 ~ 50.4 kHz
-  // -> Half cycle = 44.6 ~ 74.0 cycles
-/*
-  static bool first = true;
-  static uint32_t cyc = 0;
-  if (first) {
-    first = false;
-    cyc = DWT->CYCCNT;
-  }
-  if (DWT->CYCCNT - cyc < 0x80000000) cyc = DWT->CYCCNT;
-  cyc += 47;
-  while (DWT->CYCCNT - cyc >= 0x80000000) { }
-*/
+  // -> Half cycle = 22.3 ~ 37.0 cycles
   uint32_t start = DWT->CYCCNT;
-  while (DWT->CYCCNT - start < 47) { }
+  while (DWT->CYCCNT - start < 23) { }
 }
 
 #pragma GCC optimize ("O3")
 static inline void i2s_dump()
 {
+  // Theoretically this should yield a sample rate of 48 kHz
+  // and an ACT-LED toggle frequency of 1 Hz
+  // But this seems to fall in the range of 16 kHz (?)
   uint32_t seed = 0;
+  uint32_t phase = 0;
   while (1) {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    uint16_t value = ((seed >> 8) & 0xffff) / 4;
+    // seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    // uint16_t value = ((seed >> 8) & 0xffff) / 4;
+    phase = (phase + 1) % 64;  // 48 kHz / 64 = 750 Hz
+    // uint16_t value = abs((int32_t)phase - 32) * 512;
+    // uint16_t value = phase * 64;
+    uint16_t value = (phase < 32) * 4096;
     for (int ch = 0; ch <= 1; ch++) {
       for (int i = 15; i >= 0; i--) {
-        if (i == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, ch);
+        if (i == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, !ch);
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, (value >> i) & 1);
         i2s_delay_half();
@@ -162,6 +160,52 @@ int main()
   HAL_SPI_Init(&spi1);
   __HAL_SPI_ENABLE(&spi1);
 
+  // ======== Timer ========
+  __HAL_RCC_TIM2_CLK_ENABLE();
+  // One trigger per second (48 kHz * 32 bits)
+  tim2 = (TIM_HandleTypeDef){
+    .Instance = TIM2,
+    .Init = {
+      .Prescaler = 48 * 32 - 1,
+      .CounterMode = TIM_COUNTERMODE_UP,
+      .Period = 1000 - 1,
+      .ClockDivision = TIM_CLOCKDIVISION_DIV1,
+      .RepetitionCounter = 0,
+    },
+  };
+  HAL_TIM_Base_Init(&tim2);
+
+  TIM_ClockConfigTypeDef tim2_cfg = {
+    .ClockSource = TIM_CLOCKSOURCE_TI1,
+    .ClockPolarity = TIM_CLOCKPOLARITY_FALLING,
+    .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
+    .ClockFilter = 0,
+  };
+  HAL_TIM_ConfigClockSource(&tim2, &tim2_cfg);
+  HAL_TIM_ConfigTI1Input(&tim2, TIM_TI1SELECTION_CH1);
+
+  // TIM2_CH1_ETR (PA0)
+  gpio_init.Pin = GPIO_PIN_0;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &gpio_init);
+
+  HAL_TIM_Base_Start_IT(&tim2);
+  __HAL_TIM_ENABLE_IT(&tim2, TIM_IT_UPDATE);
+  HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+  // One trigger (toggle) per second
+  uint32_t start = DWT->CYCCNT;
+  while (0) {
+    GPIOA->BSRR = ((uint32_t)GPIO_PIN_5 << 16);
+    while (DWT->CYCCNT - start < 23) { }
+    GPIOA->BSRR = GPIO_PIN_5;
+    while (DWT->CYCCNT - start < 46) { }
+    start += 46;
+  }
+
   i2s_dump();
 
   while (1) {
@@ -176,4 +220,16 @@ void SysTick_Handler()
 {
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
+}
+
+void TIM2_IRQHandler()
+{
+  HAL_TIM_IRQHandler(&tim2);
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *tim2)
+{
+  static uint32_t count = 0;
+  count ^= 1;
+  HAL_GPIO_WritePin(LED_PORT, LED_PIN_ACT, count);
 }
