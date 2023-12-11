@@ -57,6 +57,25 @@ static inline void i2s_delay_half()
 #pragma GCC optimize ("O3")
 static inline void i2s_dump()
 {
+/*
+  while (0) {
+    uint8_t data[100];
+    HAL_SPI_Transmit(&spi1, data, 100, 1000);
+  }
+
+  __HAL_TIM_SET_COUNTER(&tim2, 100);
+  swv_printf("counter = %u\n", __HAL_TIM_GET_COUNTER(&tim2));
+*/
+
+/*
+  __HAL_TIM_SET_COUNTER(&tim2, 100);
+  swv_printf("init counter = %u\n", __HAL_TIM_GET_COUNTER(&tim2));
+  uint32_t last_counter = __HAL_TIM_GET_COUNTER(&tim2);
+  uint32_t delay = 0;
+*/
+
+  __HAL_TIM_SET_COUNTER(&tim2, 1);
+
   // Theoretically this should yield a sample rate of 48 kHz
   // and an ACT-LED toggle frequency of 1 Hz
   // But this seems to fall in the range of 16 kHz (?)
@@ -72,13 +91,24 @@ static inline void i2s_dump()
     for (int ch = 0; ch <= 1; ch++) {
       for (int i = 15; i >= 0; i--) {
         if (i == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, !ch);
+        swv_printf("down ch=%d i=%d CNT=%u\n", ch, i, __HAL_TIM_GET_COUNTER(&tim2));
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, (value >> i) & 1);
         i2s_delay_half();
+        swv_printf("up   ch=%d i=%d CNT=%u\n", ch, i, __HAL_TIM_GET_COUNTER(&tim2));
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
         i2s_delay_half();
       }
     }
+  /*
+    uint32_t cur_counter = __HAL_TIM_GET_COUNTER(&tim2);
+    if (last_counter != cur_counter) {
+      swv_printf("counter = %u (after %u)\n", cur_counter, delay);
+      last_counter = cur_counter;
+      delay = 0;
+    }
+    delay++;
+  */
   }
 }
 
@@ -156,7 +186,7 @@ int main()
   spi1.Init.TIMode = SPI_TIMODE_DISABLE;
   spi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   spi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  spi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  spi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;  // 18 MHz
   HAL_SPI_Init(&spi1);
   __HAL_SPI_ENABLE(&spi1);
 
@@ -166,9 +196,9 @@ int main()
   tim2 = (TIM_HandleTypeDef){
     .Instance = TIM2,
     .Init = {
-      .Prescaler = 48 * 32 - 1,
+      .Prescaler = 1 - 1,
       .CounterMode = TIM_COUNTERMODE_UP,
-      .Period = 1000 - 1,
+      .Period = 15,
       .ClockDivision = TIM_CLOCKDIVISION_DIV1,
       .RepetitionCounter = 0,
     },
@@ -179,7 +209,9 @@ int main()
     .ClockSource = TIM_CLOCKSOURCE_TI1,
     .ClockPolarity = TIM_CLOCKPOLARITY_FALLING,
     .ClockPrescaler = TIM_CLOCKPRESCALER_DIV1,
-    .ClockFilter = 0,
+    // f_SAMPLING = f_DTS/2, N = 6 (f_DTS = f_CK_INT)
+    // RM0008 Rev 21, pp. 415, 404
+    .ClockFilter = 0b0100,
   };
   HAL_TIM_ConfigClockSource(&tim2, &tim2_cfg);
   HAL_TIM_ConfigTI1Input(&tim2, TIM_TI1SELECTION_CH1);
@@ -192,7 +224,8 @@ int main()
   HAL_GPIO_Init(GPIOA, &gpio_init);
 
   HAL_TIM_Base_Start_IT(&tim2);
-  __HAL_TIM_ENABLE_IT(&tim2, TIM_IT_UPDATE);
+  // __HAL_TIM_ENABLE_IT(&tim2, TIM_IT_UPDATE);
+  __HAL_TIM_ENABLE_IT(&tim2, TIM_IT_TRIGGER);
   HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
@@ -229,7 +262,11 @@ void TIM2_IRQHandler()
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *tim2)
 {
-  static uint32_t count = 0;
-  count ^= 1;
-  HAL_GPIO_WritePin(LED_PORT, LED_PIN_ACT, count);
+  static uint32_t count = 0, parity = 0;
+  if (++count == 48000 * 32) {
+    count = 0;
+    parity ^= 1;
+  }
+  swv_printf("timer\n");
+  HAL_GPIO_WritePin(LED_PORT, LED_PIN_ACT, parity);
 }
