@@ -1711,7 +1711,7 @@
     (effects (font (size 1.27 1.27) italic) (justify left bottom))
     (uuid 28aee7b0-ef67-412c-8c46-689994eaa969)
   )
-  (text "(PB0 AF2) TIM3_CH3" (at 92.71 104.14 0)
+  (text "(PB0 AF1) TIM3_CH3" (at 92.71 104.14 0)
     (effects (font (size 1.27 1.27) italic) (justify right bottom))
     (uuid 32497a94-dfea-4dac-98c5-0770e8c7ed48)
   )

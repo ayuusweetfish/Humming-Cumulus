@@ -15,6 +15,17 @@
 #define LED_OUT_B_PORT  GPIOB
 #define LED_OUT_B_PIN   GPIO_PIN_7
 
+#define DRV_EN_PORT   GPIOA
+#define DRV_EN_U_PIN  GPIO_PIN_1
+#define DRV_EN_V_PIN  GPIO_PIN_2
+#define DRV_EN_W_PIN  GPIO_PIN_5
+#define DRV_IN_U_PORT GPIOA
+#define DRV_IN_U_PIN  GPIO_PIN_6
+#define DRV_IN_V_PORT GPIOA
+#define DRV_IN_V_PIN  GPIO_PIN_7
+#define DRV_IN_W_PORT GPIOB
+#define DRV_IN_W_PIN  GPIO_PIN_0
+
 TIM_HandleTypeDef tim14, tim16, tim17;
 I2C_HandleTypeDef i2c2;
 
@@ -179,6 +190,27 @@ int main()
   HAL_TIM_PWM_ConfigChannel(&tim17, &tim17_ch1_oc_init, TIM_CHANNEL_1);
   HAL_TIMEx_PWMN_Start(&tim17, TIM_CHANNEL_1);
 
+  // Driver PWMs, TIM3
+  // gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  gpio_init.Pin = DRV_IN_U_PIN;
+  gpio_init.Alternate = GPIO_AF1_TIM3;
+  HAL_GPIO_Init(DRV_IN_U_PORT, &gpio_init);
+  gpio_init.Pin = DRV_IN_V_PIN;
+  gpio_init.Alternate = GPIO_AF1_TIM3;
+  HAL_GPIO_Init(DRV_IN_V_PORT, &gpio_init);
+  gpio_init.Pin = DRV_IN_W_PIN;
+  gpio_init.Alternate = GPIO_AF1_TIM3;
+  HAL_GPIO_Init(DRV_IN_W_PORT, &gpio_init);
+
+  // Also, the driver phase-enable signals
+  gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init.Pin = DRV_EN_U_PIN | DRV_EN_V_PIN | DRV_EN_W_PIN;
+  HAL_GPIO_Init(DRV_EN_PORT, &gpio_init);
+  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN | DRV_EN_V_PIN | DRV_EN_W_PIN, GPIO_PIN_RESET);
+
   // ======== I2C ========
   gpio_init.Pin = GPIO_PIN_11 | GPIO_PIN_12;
   gpio_init.Mode = GPIO_MODE_AF_PP;
@@ -202,6 +234,26 @@ int main()
     },
   };
   HAL_I2C_Init(&i2c2);
+
+  while (true) {
+    static const uint8_t signals[6][6] = {
+      {0, 0, 1, 1, 0, 1},
+      {1, 1, 0, 0, 0, 1},
+      {1, 1, 0, 1, 0, 0},
+      {0, 0, 0, 1, 1, 1},
+      {0, 1, 0, 0, 1, 1},
+      {0, 1, 1, 1, 0, 0},
+    };
+    for (int i = 0; i < 6; i++) {
+      HAL_GPIO_WritePin(DRV_IN_U_PORT, DRV_IN_U_PIN, signals[i][0]);
+      HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN, signals[i][1]);
+      HAL_GPIO_WritePin(DRV_IN_V_PORT, DRV_IN_V_PIN, signals[i][2]);
+      HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_V_PIN, signals[i][3]);
+      HAL_GPIO_WritePin(DRV_IN_W_PORT, DRV_IN_W_PIN, signals[i][4]);
+      HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_W_PIN, signals[i][5]);
+      HAL_Delay(200);
+    }
+  }
 
   // Read registers from AS5600
   while (1) {
@@ -262,5 +314,5 @@ void SysTick_Handler()
   HAL_SYSTICK_IRQHandler();
 
   if (HAL_GetTick() % 500 == 0)
-    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, HAL_GetTick() % 1000 == 0);
+    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, HAL_GetTick() % 1000 != 0);
 }
