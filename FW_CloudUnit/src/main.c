@@ -339,13 +339,18 @@ int main()
   }
 */
 
+if (0) {
   HAL_Delay(500);
   while (1) {
     for (int i = 0; i < 36000000; i += 10000) {
       drive_motor(i);
-      HAL_Delay(1);
+      // HAL_Delay(1);
+      for (int j = 0; j < 300; j++) asm volatile ("nop");
     }
+    static int parity = 1;
+    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, parity ^= 1);
   }
+}
 
   // Read registers from AS5600
   while (1) {
