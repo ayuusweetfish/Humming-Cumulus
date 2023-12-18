@@ -57,12 +57,12 @@ static inline void i2s_delay_half()
 #pragma GCC optimize ("O3")
 static inline void i2s_dump()
 {
-/*
-  while (0) {
+  while (1) {
     uint8_t data[100];
     HAL_SPI_Transmit(&spi1, data, 100, 1000);
   }
 
+/*
   __HAL_TIM_SET_COUNTER(&tim2, 100);
   swv_printf("counter = %u\n", __HAL_TIM_GET_COUNTER(&tim2));
 */
@@ -163,8 +163,8 @@ int main()
   // GPIO ports
   // SPI1_SCK (PA5), SPI1_MOSI (PA7)
   gpio_init.Pin = GPIO_PIN_5 | GPIO_PIN_7;
-  // gpio_init.Mode = GPIO_MODE_AF_PP;
-  gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  // gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
   gpio_init.Pull = GPIO_NOPULL;
   gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &gpio_init);
