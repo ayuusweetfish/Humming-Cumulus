@@ -304,87 +304,13 @@ int main()
   };
   HAL_I2C_Init(&i2c2);
 
-/*
-  HAL_Delay(2000);
-  HAL_GPIO_WritePin(DRV_IN_U_PORT, DRV_IN_U_PIN, 0);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN, 0);
-  HAL_GPIO_WritePin(DRV_IN_V_PORT, DRV_IN_V_PIN, 1);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_V_PIN, 1);
-  HAL_GPIO_WritePin(DRV_IN_W_PORT, DRV_IN_W_PIN, 0);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_W_PIN, 1);
-  for (int i = 0; i < 100; i++) asm volatile ("nop");
-  HAL_GPIO_WritePin(DRV_IN_U_PORT, DRV_IN_U_PIN, 0);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN, 0);
-  HAL_GPIO_WritePin(DRV_IN_V_PORT, DRV_IN_V_PIN, 0);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_V_PIN, 0);
-  HAL_GPIO_WritePin(DRV_IN_W_PORT, DRV_IN_W_PIN, 0);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_W_PIN, 0);
-  HAL_Delay(2000);
-
-  while (true) {
-    static const uint8_t signals[6][6] = {
-      {0, 0, 1, 1, 0, 1},
-      {1, 1, 0, 0, 0, 1},
-      {1, 1, 0, 1, 0, 0},
-      {0, 0, 0, 1, 1, 1},
-      {0, 1, 0, 0, 1, 1},
-      {0, 1, 1, 1, 0, 0},
-    };
-    for (int i = 0; i < 6; i++) {
-      HAL_GPIO_WritePin(DRV_IN_U_PORT, DRV_IN_U_PIN, signals[i][0]);
-      HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN, signals[i][1]);
-      HAL_GPIO_WritePin(DRV_IN_V_PORT, DRV_IN_V_PIN, signals[i][2]);
-      HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_V_PIN, signals[i][3]);
-      HAL_GPIO_WritePin(DRV_IN_W_PORT, DRV_IN_W_PIN, signals[i][4]);
-      HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_W_PIN, signals[i][5]);
-      HAL_Delay(200);
-    }
-  }
-*/
-
 if (1) {
-/*
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN, 1);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_V_PIN, 1);
-  HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_W_PIN, 1);
   while (1) {
-    for (int i = 0; i < 720; i++) {
-      TIM3->CCR1 = sin_lookup[0][(i +   0) % 720];
-      TIM3->CCR2 = sin_lookup[0][(i + 240) % 720];
-      TIM3->CCR3 = sin_lookup[0][(i + 480) % 720];
-      for (int j = 0; j < 1000; j++) asm volatile ("nop");
-    }
-    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, 1);
-    for (int i = 719; i >= 0; i--) {
-      TIM3->CCR1 = sin_lookup[0][(i +   0) % 720];
-      TIM3->CCR2 = sin_lookup[0][(i + 240) % 720];
-      TIM3->CCR3 = sin_lookup[0][(i + 480) % 720];
-      for (int j = 0; j < 1000; j++) asm volatile ("nop");
-    }
-    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, 0);
-    // static int parity = 1;
-    // HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, parity ^= 1);
-  }
-  while (1) {
-    for (int max = 9000000; max <= 36000000; max += 1000000) {
-      int i = 0;
-      for (; i < max; i += 2500) {
-        drive_motor(i);
-        for (int j = 0; j < 300; j++) asm volatile ("nop");
-      }
-      for (; i > 0; i -= 2500) {
-        drive_motor(i);
-        for (int j = 0; j < 300; j++) asm volatile ("nop");
-      }
-      static int parity = 1;
-      HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, parity ^= 1);
-    }
-  }
-*/
-  while (1) {
-    for (int i = 0; i < 36000000; i += 10000) {
-      drive_motor(i);
-      // HAL_Delay(1);
+    for (int i = 0; i < 3600; i++) {
+      // angle normalized into [0, 36000000)
+      // int angle = i * 10000;
+      int angle = (int)(0.5f + 72000000 + 40000000 * sinf((float)i / 3600 * 6.2831853f));
+      drive_motor(angle);
       for (int j = 0; j < 100; j++) asm volatile ("nop");
     }
     static int parity = 1;
