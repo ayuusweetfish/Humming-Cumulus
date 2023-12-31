@@ -131,6 +131,7 @@ int main()
 
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
+/*
   // ======== Timer ========
   // APB1 = 64 MHz
   // period = 4 kHz = 16000 cycles
@@ -266,6 +267,7 @@ int main()
   gpio_init.Pin = DRV_EN_U_PIN | DRV_EN_V_PIN | DRV_EN_W_PIN;
   HAL_GPIO_Init(DRV_EN_PORT, &gpio_init);
   HAL_GPIO_WritePin(DRV_EN_PORT, DRV_EN_U_PIN | DRV_EN_V_PIN | DRV_EN_W_PIN, GPIO_PIN_RESET);
+*/
 
   // ======== I2C ========
   gpio_init.Pin = GPIO_PIN_11 | GPIO_PIN_12;
@@ -291,9 +293,9 @@ int main()
   };
   HAL_I2C_Init(&i2c2);
 
-if (1) {
+if (0) {
   while (1) {
-    for (int i = 0; i < 3600; i += 3) {
+    for (int i = 0; i < 3600; i += 1) {
       // angle normalized into [0, 36000000)
       // int angle = i * 10000;
       int angle = (int)(0.5f + 72000000 + 40000000 * sinf((float)i / 3600 * 6.2831853f));
@@ -308,15 +310,15 @@ if (1) {
   // Read registers from AS5600
   while (1) {
     uint8_t status = 0, agc = 0;
-    uint8_t raw_angle[2];
+    uint8_t raw_angle[2] = { 0x00, 0x0a };
     HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x0B, I2C_MEMADD_SIZE_8BIT, &status, 1, 1000);
     HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x1A, I2C_MEMADD_SIZE_8BIT, &agc, 1, 1000);
     HAL_I2C_Mem_Read(&i2c2, 0x36 << 1, 0x0E, I2C_MEMADD_SIZE_8BIT, raw_angle, 2, 1000);
-  /*
     swv_printf("status = %02x, AGC = %02x, raw angle = %4u\n",
       status & 0x38, agc, ((uint32_t)raw_angle[0] << 8) | raw_angle[1]);
+    // status = 10, AGC = 80, raw angle = xxxx
     HAL_Delay(200);
-  */
+/*
     if (status & 0x20) {
       // MD: Magnet detected
       if (!(status & 0x18)) {
@@ -337,6 +339,7 @@ if (1) {
       TIM17->CCR1 = 0;
     }
     HAL_Delay(1);
+*/
   }
 
   // ======== Main loop ========
