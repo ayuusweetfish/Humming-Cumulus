@@ -129,7 +129,6 @@ int main()
 
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
-/*
   // ======== Timer ========
   // APB1 = 64 MHz
   // period = 4 kHz = 16000 cycles
@@ -214,7 +213,6 @@ int main()
   };
   HAL_TIM_PWM_ConfigChannel(&tim17, &tim17_ch1_oc_init, TIM_CHANNEL_1);
   HAL_TIMEx_PWMN_Start(&tim17, TIM_CHANNEL_1);
-*/
 
   // Driver PWMs, TIM3
   gpio_init.Mode = GPIO_MODE_AF_PP;
@@ -300,14 +298,19 @@ int main()
   HAL_I2C_Init(&i2c2);
 
   while (1) {
-    for (int i = 0; i < 3600; i += 1) {
+    static int chroma = 2;
+    static TIM_TypeDef *const chroma_timers[3] = {TIM14, TIM16, TIM17};
+    chroma = (chroma + 1) % 3;
+    TIM14->CCR1 = 0;
+    TIM16->CCR1 = 0;
+    TIM17->CCR1 = 0;
+    for (int i = 0; i < 32400; i += 1) {
+      float t = 1 - cosf((float)i / 32400 * 6.2831853f);
       // angle normalized into [0, 36000000)
-      int angle = (int)(0.5f + 72000000 + 36000000 * sinf((float)i / 3600 * 6.2831853f));
+      int angle = (int)(0.5f + 72000000 + 432000000 * t);
       drive_motor(angle);
-    }
-    for (int i = 0; i < 3600; i += 1) {
-      int angle = 72000000 + 10000 * i;
-      drive_motor(angle);
+      // T
+      chroma_timers[chroma]->CCR1 = 4000 * t;
     }
     static int parity = 1;
     HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, parity ^= 1);
