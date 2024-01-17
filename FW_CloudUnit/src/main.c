@@ -275,6 +275,19 @@ int main()
 
   // ======== I2C ========
   gpio_init.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+/*
+  // Test direct open-drain output
+  gpio_init.Mode = GPIO_MODE_OUTPUT_OD;
+  gpio_init.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &gpio_init);
+  while (1) {
+    static bool parity = 0;
+    HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, parity);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, parity);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, parity ^= 1);
+    HAL_Delay(3000);
+  }
+*/
   gpio_init.Mode = GPIO_MODE_AF_PP;
   gpio_init.Alternate = GPIO_AF6_I2C2;
   gpio_init.Pull = GPIO_NOPULL;
@@ -330,6 +343,12 @@ int main()
     // HAL_I2C_ERROR_TIMEOUT (32) can arise when SCL/SDA pull-ups are not well soldered
     // Otherwise device NACK should be HAL_I2C_ERROR_AF (4)
     HAL_Delay(200);
+    if (r1 != 0 || r2 != 0 || r3 != 0 || i2c2.ErrorCode != 0) {
+      for (int i = 0; i <= 6; i++) {
+        HAL_GPIO_WritePin(LED_IND_ACT_PORT, LED_IND_ACT_PIN, parity ^ (i & 1));
+        HAL_Delay(200);
+      }
+    }
   }
 
   // Read registers from AS5600
