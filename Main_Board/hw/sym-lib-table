@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "CuHum_symbols")(type "KiCad")(uri "${KIPRJMOD}/CuHum_symbols.kicad_sym")(options "")(descr ""))
+)
