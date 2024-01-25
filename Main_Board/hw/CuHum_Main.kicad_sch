@@ -5615,7 +5615,7 @@
     (property "Value" "Conn_01x04" (at 12.065 113.665 0)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
-    (property "Footprint" "CuHum_Main_footprints:TestPoints_1x04_P2.0" (at 14.605 111.125 0)
+    (property "Footprint" "CuHum_Main_footprints:TestPoints_1x04_P2.54" (at 14.605 111.125 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (at 14.605 111.125 0)
