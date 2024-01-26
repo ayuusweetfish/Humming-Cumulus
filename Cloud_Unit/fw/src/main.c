@@ -320,10 +320,10 @@ int main()
     TIM14->CCR1 = 0;
     TIM16->CCR1 = 0;
     TIM17->CCR1 = 0;
-    for (int i = 0; i < 32400; i += 1) {
-      float t = 1 - cosf((float)i / 32400 * 6.2831853f);
+    for (int i = 0; i < 21600; i += 1) {
+      float t = 1 - cosf((float)i / 21600 * 6.2831853f);
       // angle normalized into [0, 36000000)
-      int angle = (int)(0.5f + 72000000 + 432000000 * t);
+      int angle = (int)(0.5f + 72000000 + 288000000 * t);
       drive_motor(angle);
       // T
       chroma_timers[chroma]->CCR1 = 4000 * t;
