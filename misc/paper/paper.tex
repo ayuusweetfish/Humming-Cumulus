@@ -35,6 +35,7 @@
 
 
 \section{Program Notes}
+Have you ever dreamed of making friends with the clouds? It would be perfect if you bring a melody with you! If not --- stay tuned~\footnote{Pun intended.}, they have quite a few to share.
 
 \section{Project Description}
 \subsection{Overview}
@@ -55,6 +56,8 @@
 A guided-play option, selected by holding a special cloud, allows the participant to have clouds fall into their hands in a pre-programmed sequence and play out a tune, creating a tactile and interactive musical experience.
 
 This dual interaction scheme adapts to player expertise, creating opportunities for learning and expression for participants from varied backgrounds. Through our work, we hope to promote musical exploration and social play through an inviting appearance, an easy-to-understand mapping, and rich feedback.
+
+Please refer to the attached animation video for an intuitive exposition of our concept.
 
 \subsection{Background}
 It has been a lasting endeavour for us to bring the joy of musical expression and performance within the reach of those without the advantage of comprehensive musical training and performances --- indeed, music, sounds, and touch are an innate expressive language shared by humankind.
@@ -92,7 +95,13 @@ At the top of the installation is a circuit board and a speaker, contained in a 
 
 Each cloud is driven by a brushless DC (BLDC) motor also hidden in the casing. A spindle is attached to the motor and a bundle of wires is wound around it. The wires are connected to the cloud so that it can be elevated and lowered through rotations of the motor.
 
-The clouds each contains a silver-plated sewing thread, wrapped around the cotton, that serves as the electrode of capacitive sensing. This thread is fixed to an extended electrical wire by copper tape and glue. In addition, the LEDs buried in the clouds also call for electrical connections to the on-board circuitry. We hence add electrical wires to the wrapped wire bundle (totalling 5 strands of 32 AWG, strengthened with fishing wire). Figure X provides a depiction of this structure.
+\begin{figure}[h!]
+  \includegraphics[width=0.75\textwidth]{Sub_Unit.png}
+  \caption{Illustrations of \textbf{(a)} the composition of a sub-unit; \textbf{(b)} an exploded-view exposing how the wire bundle is wrapped.}
+  \label{fig:Sub_Unit}
+\end{figure}
+
+The clouds each contains a silver-plated sewing thread, wrapped around the cotton, that serves as the electrode of capacitive sensing. This thread is fixed to an extended electrical wire by copper tape and glue. In addition, the LEDs buried in the clouds also call for electrical connections to the on-board circuitry. We hence add electrical wires to the wrapped wire bundle (totalling 5 strands of 32 AWG, strengthened with fishing wire). Figure~\ref{fig:Sub_Unit} provides a depiction of this structure.
 
 \subsubsection{Electronics}
 We design and assemble customised printed circuit boards (PCBs) for all the electronics. The entire device comprises a main unit and 16 sub-units. The main unit is responsible for delivering power and control messages to the sub-units, which each takes care of a motor and thus a cloud. Figure~\ref{fig:Block} shows a block diagram of the major components involved.
@@ -120,7 +129,7 @@ We publish all design resources, including mechanical models, circuit boards, an
 \label{sect:Perf_Notes}
 
 \subsubsection{Space}
-We will be able to build the installation at different sizes depending on the space available. The minimum size is $25\ \text{cm} \times 25\ \text{cm} \times 40\ \text{cm}$ (tabletop), and the maximum is $100\ \text{cm} \times 100\ \text{cm} \times 200\ \text{cm}$ (human-scale). For a tabletop realisation, we would like the table to be surrounded by at least two sides of free space (i.e., not facing a wall). For a human-scale realisation, we would like to ensure a clear space of around $2\ \text{m} \times 2\ \text{m}$. Dimensions in-between are also possible if desired. Figure~\ref{fig:Dimensions} illustrates the installation of different scales being operated.
+We will be able to build the installation at a variable size depending on the space available. The minimum size is $25\ \text{cm} \times 25\ \text{cm} \times 40\ \text{cm}$ (tabletop), and the maximum is $100\ \text{cm} \times 100\ \text{cm} \times 200\ \text{cm}$ (human-scale). For a tabletop realisation, we would like the table to be surrounded by at least two sides of free space (i.e., not facing a wall). For a human-scale realisation, we would like to ensure a clear space of around $2\ \text{m} \times 2\ \text{m}$. Dimensions in-between are also possible if desired. Figure~\ref{fig:Dimensions} illustrates the installation of different scales being operated. The size can be determined according to the needs and arrangements of the organisers.
 
 \begin{figure}[h!]
   \includegraphics[width=0.8\textwidth]{Dimensions.png}
@@ -146,17 +155,17 @@ We expect to assemble and test all circuitry beforehand, reducing on-site work t
 \subsubsection{Feasibility}
 Currently, we have built functional smaller units and will be working on a fully assembled installation at tabletop scale in the following month. We are confident that we will be accomplishing our work in time.
 
-The authors have experience with exhibition installations and has been involved in on-site setup and troubleshooting multiple times. Members have completed similar projects (capacitive sensors, motors, sound-emitting devices) that was successfully deployed and ran without major problems.
+The authors have experience with exhibition installations and has been involved in on-site setup and troubleshooting multiple times. Members have completed similar projects (capacitive sensors, motors, sound-emitting devices) that was successfully deployed and ran without major problems. Such projects were also open-sourced and publicised.
 
 We will take precautions to avoid material shortage in case damage happen during transport or assembly; see the following.
 
 \subsubsection{Equipment}
-We have no requirement for equipment. We will bring a pair of scissors, a pair of tweezers, screwdrivers, a piler, a hot glue gun, and a soldering iron along with necessary material. We will also bring redundant electronic components. In case we need to repair damaged devices, necessary material can be obtained locally.
+We have no requirement for equipment. We will bring a pair of scissors, a pair of tweezers, screwdrivers, a piler, a hot glue gun, and a soldering iron along with corresponding material. We will also bring redundant electronic components. In case we need to repair damaged devices, necessary material can be obtained locally.
 
-We will be glad to have a AC/DC adapter rated above 20 W. The output can be either exposed wires or a DC connector. A pointer to local shops would be equally helpful.
+Nevertheless, we will be glad to have a AC/DC adapter rated above 20 W. The output can be either exposed wires or a DC connector. A pointer to local shops would be equally helpful.
 
 \begin{acks}
-We thank the anonymous reviewers for taking the effort to provide feedback.
+We thank the anonymous reviewers for their effort in providing feedback.
 
 Anonymised otherwise.
 \end{acks}
